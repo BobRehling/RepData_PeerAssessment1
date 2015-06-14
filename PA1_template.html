@@ -64,6 +64,11 @@ img {
 </div>
 
 
+<div id="introduction" class="section level2">
+<h2>Introduction</h2>
+<p>This project analyses data from a personal activity monitoring device. The data consists of two months of data from an anonymous individual.</p>
+<p>The input dataset consists of a CSV file with the following columns:<br /> - <strong>steps:</strong> Number of steps taken in a 5-minute interval.<br /> - <strong>date:</strong> Date of measurement, in YYY-MM-DD format.<br /> - <strong>interval:</strong> Identifies the 5-minute interval in which the measurement was taken.</p>
+</div>
 <div id="loading-and-preprocessing-the-data" class="section level2">
 <h2>Loading and preprocessing the data</h2>
 <pre class="r"><code># Read input data
@@ -72,7 +77,6 @@ indata &lt;- read.csv(&quot;activity.csv&quot;)
 # Convert the interval field into hours and minutes
 indata$hours &lt;- trunc( indata$interval/100)
 indata$hm &lt;-  indata$interval/100
-
 indata$minutes &lt;- round ( (indata$hm - indata$hours)*100)
 
 # Create a subset excluding records with any missing data.
@@ -80,6 +84,7 @@ activity &lt;- indata[complete.cases(indata), ]</code></pre>
 </div>
 <div id="what-is-mean-total-number-of-steps-taken-per-day" class="section level2">
 <h2>What is mean total number of steps taken per day?</h2>
+<p>The <strong>mean</strong> total number of steps taken per day is <strong>10,766.19</strong><br />The <strong>median</strong> number of steps per day is <strong>10,765</strong></p>
 <pre class="r"><code># Calculate the total number of steps
 agg &lt;- aggregate(activity$steps, activity['date'], sum)
 
@@ -102,10 +107,12 @@ median_daily_steps</code></pre>
 </div>
 <div id="what-is-the-average-daily-activity-pattern" class="section level2">
 <h2>What is the average daily activity pattern?</h2>
+<p>The daily pattern is shown in the plot below.</p>
+<p>On average, the greatest number of steps were taken during the <strong>8:35</strong> interval. (This is consistent with the peak in the plot.)</p>
 <pre class="r"><code># Calculate mean number of steps in each 5-minute interval
 agg2 &lt;- aggregate(activity$steps, activity['hm'], mean)
 
-#Create time series plot for mean number of steps by 
+#Create time series plot for mean number of steps by interval
 qplot(hm, x, data=agg2, geom = &quot;line&quot;,
       main= &quot;Average Number of Steps Taken \nin Each 5-Minute Interval &quot;,
       xlab= &quot; Interval &quot;,
@@ -119,16 +126,31 @@ rm$hm</code></pre>
 </div>
 <div id="imputing-missing-values" class="section level2">
 <h2>Imputing missing values</h2>
+<p><strong>2304</strong> records from the imported datasets had missing values (NAs) for the number of steps. There were no missing values for the other two columns.</p>
+<p>The <strong>strategy</strong> used to replace missing values for the number of steps was:<br />1. The input dataset was merged with the data frame giving the mean number of steps for each interval.<br />2. Missing values were replaced with the mean number of steps for that interval.</p>
+<p>The summary function was then used to check if any missing values remained. All missing values were successfully replaced.</p>
+<p>Using the dataset with missing values imputed,<br />- The <strong>mean</strong> total number of steps is per day is <strong>10,766.19</strong> (same as before).<br />- The <strong>median</strong> total number of steps per day is <strong>10,766.19</strong> (slight increase).<br />- The median and mean are now the same, whereas before there was a slight difference.</p>
 <pre class="r"><code>#Print the number of rows having NAs for the number of steps
-nrow(indata[ is.na(indata$steps) == TRUE , ])</code></pre>
-<pre><code>## [1] 2304</code></pre>
-<pre class="r"><code># verify that there are no NAs for interval and date
-indata[ is.na(indata$interval) == TRUE , ]</code></pre>
-<pre><code>## [1] steps    date     interval hours    hm       minutes 
-## &lt;0 rows&gt; (or 0-length row.names)</code></pre>
-<pre class="r"><code>indata[ is.na(indata$date) == TRUE , ]</code></pre>
-<pre><code>## [1] steps    date     interval hours    hm       minutes 
-## &lt;0 rows&gt; (or 0-length row.names)</code></pre>
+cat( &quot;Number of rows with missing values is &quot;, nrow(indata) - nrow( activity))</code></pre>
+<pre><code>## Number of rows with missing values is  2304</code></pre>
+<pre class="r"><code># Check which columns have missing values
+summary(indata)</code></pre>
+<pre><code>##      steps                date          interval          hours      
+##  Min.   :  0.00   2012-10-01:  288   Min.   :   0.0   Min.   : 0.00  
+##  1st Qu.:  0.00   2012-10-02:  288   1st Qu.: 588.8   1st Qu.: 5.75  
+##  Median :  0.00   2012-10-03:  288   Median :1177.5   Median :11.50  
+##  Mean   : 37.38   2012-10-04:  288   Mean   :1177.5   Mean   :11.50  
+##  3rd Qu.: 12.00   2012-10-05:  288   3rd Qu.:1766.2   3rd Qu.:17.25  
+##  Max.   :806.00   2012-10-06:  288   Max.   :2355.0   Max.   :23.00  
+##  NA's   :2304     (Other)   :15840                                   
+##        hm            minutes     
+##  Min.   : 0.000   Min.   : 0.00  
+##  1st Qu.: 5.888   1st Qu.:13.75  
+##  Median :11.775   Median :27.50  
+##  Mean   :11.775   Mean   :27.50  
+##  3rd Qu.:17.663   3rd Qu.:41.25  
+##  Max.   :23.550   Max.   :55.00  
+## </code></pre>
 <pre class="r"><code># Merge imported dataframe with vector of mean steps for each interval,
 # merging by interval, keeping all input rows,
 # even if not matched (left join).
@@ -164,14 +186,19 @@ median_daily_steps</code></pre>
 </div>
 <div id="are-there-differences-in-activity-patterns-between-weekdays-and-weekends" class="section level2">
 <h2>Are there differences in activity patterns between weekdays and weekends?</h2>
+<ul>
+<li>The panel plot below shows that the activity patters are about the same for late night/early morning.</li>
+<li>From about 5:30 am to about 9:30 am there is grater activity during weekdays.</li>
+<li>From about 9:30 am until evening there is greater activity on weekends.</li>
+</ul>
 <pre class="r"><code>m$act_date &lt;- as.Date(m$date)
 m$weekday &lt;- weekdays(m$act_date)
 m$weekend &lt;- factor( ifelse(m$weekday %in% c(&quot;Saturday&quot;, &quot;Sunday&quot;), &quot;Weekend&quot;, &quot;Weekday&quot;) )
 
-# Calculate mean number of steps in each 5-minute interval
+# Calculate mean number of steps in each 5-minute interval for weekdays and weekends
 agg20 &lt;- aggregate(m$steps, m[ c('weekend', 'hm')],  mean)
 
-#Create time series plot for mean number of steps 
+#Create panel plot for mean number of steps 
 #by 5-minute interval and weekday/weekend
 qplot(hm, x, data=agg20, geom = &quot;line&quot; , facets =  weekend~ .,
       main= &quot;Average Number of Steps Taken \nin Each 5-Minute Interval\nfor Weekdays and Weekend
